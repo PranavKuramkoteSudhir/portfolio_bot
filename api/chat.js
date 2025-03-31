@@ -16,20 +16,22 @@ const pool = new Pool({
 const EMBED_API_KEY = process.env.COHERE_EMBED_API_KEY
 const GEN_API_KEY = process.env.COHERE_GEN_API_KEY
 
-console.log("COHERE_EMBED_API_KEY:", process.env.COHERE_EMBED_API_KEY);
-console.log("DATABASE_URL:", process.env.DATABASE_URL);
-
-
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
+  // ✅ Log environment variables for debugging
+  console.log("COHERE_EMBED_API_KEY:", process.env.COHERE_EMBED_API_KEY)
+  console.log("DATABASE_URL:", process.env.DATABASE_URL)
+
   const { query } = req.body
-  if (!query) return res.status(400).json({ error: 'Missing query' })
+  if (!query) {
+    return res.status(400).json({ error: 'Missing query' })
+  }
 
   try {
+    // 🔹 1. Embed query
     const embedRes = await fetch('https://api.cohere.ai/v1/embed', {
       method: 'POST',
       headers: {
@@ -50,6 +52,7 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Failed to get embedding from Cohere' })
     }
 
+    // 🔹 2. Search DB
     const client = await pool.connect()
     const dbRes = await client.query(
       `SELECT title, content, 1 - (embedding <=> $1::vector) AS similarity
@@ -67,6 +70,7 @@ export default async function handler(req, res) {
       return res.json({ response: "Sorry, nothing matched confidently enough." })
     }
 
+    // 🔹 3. Generate answer
     const prompt = `Use the context below to answer the question:\n\nContext:\n${doc.content}\n\nQuestion: ${query}\nAnswer:`
 
     const genRes = await fetch('https://api.cohere.ai/v1/chat', {
