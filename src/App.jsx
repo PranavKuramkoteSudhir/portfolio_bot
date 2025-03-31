@@ -29,7 +29,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4">
-      {/* 👇 Add this image element */}
+
       <img
         src="/pranav.jpg"
         alt="Pranav K Sudhir"

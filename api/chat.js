@@ -16,6 +16,12 @@ const pool = new Pool({
 const EMBED_API_KEY = process.env.COHERE_EMBED_API_KEY
 const GEN_API_KEY = process.env.COHERE_GEN_API_KEY
 
+console.log("🔍 ENV CHECK", {
+  EMBED: process.env.COHERE_EMBED_API_KEY ? "SET" : "MISSING",
+  GEN: process.env.COHERE_GEN_API_KEY ? "SET" : "MISSING",
+})
+
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
