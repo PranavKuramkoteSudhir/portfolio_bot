@@ -1,12 +1,11 @@
 {
-    "version": 2,
-    "builds": [
-      { "src": "api/chat.js", "use": "@vercel/node" },
-      { "src": "vite.config.js", "use": "@vercel/static-build", "config": { "distDir": "dist" } }
-    ],
-    "routes": [
-      { "src": "/api/chat", "dest": "/api/chat.js" },
-      { "src": "/(.*)", "dest": "/" }
-    ]
-  }
-  
+  "version": 2,
+  "builds": [
+    { "src": "api/chat.js", "use": "@vercel/node" },
+    { "src": "package.json", "use": "@vercel/static-build", "config": { "distDir": "dist" } }
+  ],
+  "routes": [
+    { "src": "/api/chat", "dest": "/api/chat.js" },
+    { "src": "/(.*)", "dest": "/" }
+  ]
+}
