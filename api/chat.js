@@ -16,10 +16,9 @@ const pool = new Pool({
 const EMBED_API_KEY = process.env.COHERE_EMBED_API_KEY
 const GEN_API_KEY = process.env.COHERE_GEN_API_KEY
 
-console.log("🔍 ENV CHECK", {
-  EMBED: process.env.COHERE_EMBED_API_KEY ? "SET" : "MISSING",
-  GEN: process.env.COHERE_GEN_API_KEY ? "SET" : "MISSING",
-})
+console.log("COHERE_EMBED_API_KEY:", process.env.COHERE_EMBED_API_KEY);
+console.log("DATABASE_URL:", process.env.DATABASE_URL);
+
 
 
 export default async function handler(req, res) {
