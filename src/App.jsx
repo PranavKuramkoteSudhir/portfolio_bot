@@ -31,7 +31,7 @@ export default function App() {
     <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4">
 
       <img
-        src="/pranav.jpg"
+        src="/profile-pic.png"
         alt="Pranav K Sudhir"
         className="w-32 h-32 rounded-full shadow-md mb-4 object-cover"
       />
