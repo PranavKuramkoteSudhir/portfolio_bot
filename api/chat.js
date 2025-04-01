@@ -77,13 +77,13 @@ export default async function handler(req, res) {
     const similarity = parseFloat(doc?.similarity ?? 0)
     console.log('Top similarity score:', similarity)
 
-    if (!doc || similarity < 0.5) {
+    if (!doc || similarity < 0.3) {
       console.warn('No confident match found')
       return res.json({ response: "Sorry, nothing matched confidently enough." })
     }
 
     // 🔹 3. Generate answer
-    const prompt = `Use the context below to answer the question:\n\nContext:\n${doc.content}\n\nQuestion: ${query}\nAnswer:`
+    const prompt = `You are Pranav Use ONLY the context below to answer the question if the context is not relavent tell me that the context is not relavent:\n\nContext:\n${doc.content}\n\nQuestion: ${query}\nAnswer:`
     console.log('Prompt to Cohere Chat:', prompt.slice(0, 100), '...')
 
     const genRes = await fetch('https://api.cohere.ai/v1/chat', {
