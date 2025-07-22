@@ -15,26 +15,24 @@ const EMBED_API_KEY = process.env.COHERE_EMBED_API_KEY
 const GEN_API_KEY = process.env.COHERE_GEN_API_KEY
 
 export default async function handler(req, res) {
-  console.log('\n--- [API Request Received] ---')
-  console.log('Method:', req.method)
-  console.log('Body:', req.body)
+  console.log('Received request to /api/chat')
 
   if (req.method !== 'POST') {
-    console.warn('❌ Method not allowed:', req.method)
+    console.warn('Method not allowed:', req.method)
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
   const { query } = req.body
+  console.log('📥 Incoming query:', query)
+
   if (!query) {
-    console.warn('❌ Missing query in request body')
+    console.warn('Missing "query" in request body')
     return res.status(400).json({ error: 'Missing query' })
   }
 
-  console.log('✅ Received query:', query)
-
   try {
-    // ─────────── Step 1: Embed with Cohere ───────────
-    console.log('\n🔹 [Step 1] Sending request to Cohere Embed API...')
+    // 1. Embed query
+    console.log('Requesting embedding from Cohere...')
     const embedRes = await fetch('https://api.cohere.ai/v1/embed', {
       method: 'POST',
       headers: {
@@ -48,29 +46,28 @@ export default async function handler(req, res) {
       })
     })
 
-    console.log('Embed API Status:', embedRes.status)
-
     if (!embedRes.ok) {
       const errorText = await embedRes.text()
-      console.error('❌ Cohere Embed API failed:', errorText)
+      console.error('Cohere Embed API failed:', errorText)
       return res.status(500).json({ error: 'Failed to get embedding from Cohere' })
     }
 
     const embedJson = await embedRes.json()
     const embedding = embedJson.embeddings?.[0]
 
-    console.log('✅ Got embedding. First 5 dims:', embedding?.slice(0, 5))
+    console.log('Received embedding')
+    console.log('Embedding length:', embedding?.length)
+    console.log('Embedding preview:', embedding?.slice(0, 5))
 
     if (!embedding) {
-      console.error('❌ Embedding missing in response:', embedJson)
+      console.error('Embedding missing in Cohere response:', embedJson)
       return res.status(500).json({ error: 'Embedding not returned from Cohere' })
     }
 
-    // ─────────── Step 2: Query PostgreSQL ───────────
-    console.log('\n🔹 [Step 2] Querying PostgreSQL...')
-
+    // 2. Search DB
+    console.log('Connecting to PostgreSQL...')
     const client = await pool.connect()
-    console.log('✅ PostgreSQL client connected')
+    console.log('Connected to PostgreSQL. Running similarity query...')
 
     const dbRes = await client.query(
       `SELECT title, content, 1 - (embedding <=> $1::vector) AS similarity
@@ -81,23 +78,21 @@ export default async function handler(req, res) {
     )
 
     client.release()
-    console.log('✅ Released DB client')
-    console.log('DB Query Result:', dbRes.rows)
+    console.log('Query executed successfully')
+    console.log('Top 3 results:', dbRes.rows)
 
     const doc = dbRes.rows[0]
     const similarity = parseFloat(doc?.similarity ?? 0)
     console.log('Top similarity score:', similarity)
 
     if (!doc || similarity < 0.3) {
-      console.warn('⚠️ No confident match found')
-      return res.json({ response: 'Sorry, nothing matched confidently enough.' })
+      console.warn('No confident match found')
+      return res.json({ response: "Sorry, nothing matched confidently enough." })
     }
 
-    // ─────────── Step 3: Generate Answer ───────────
-    const prompt = `You are Pranav. Use ONLY the context below to answer the question. If not relevant, say so:\n\nContext:\n${doc.content}\n\nQuestion: ${query}\nAnswer:`
-
-    console.log('\n🔹 [Step 3] Sending to Cohere Gen API...')
-    console.log('Prompt (first 100 chars):', prompt.slice(0, 100))
+    // 3. Generate answer
+    const prompt = `You are Pranav. Use ONLY the context below to answer the question. If the context is not relevant, say so.\n\nContext:\n${doc.content}\n\nQuestion: ${query}\nAnswer:`
+    console.log('Prompt to Cohere Chat:', prompt.slice(0, 200), '...')
 
     const genRes = await fetch('https://api.cohere.ai/v1/chat', {
       method: 'POST',
@@ -112,23 +107,24 @@ export default async function handler(req, res) {
       })
     })
 
-    console.log('Gen API Status:', genRes.status)
-
     if (!genRes.ok) {
       const genErrorText = await genRes.text()
-      console.error('❌ Cohere Gen API failed:', genErrorText)
+      console.error('Cohere Gen API failed:', genErrorText)
       return res.status(500).json({ error: 'Failed to generate a response' })
     }
 
     const genJson = await genRes.json()
-    console.log('✅ Generation result:', genJson)
+    console.log('Generation API response received')
+    console.log('Raw response:', genJson)
 
     const answer = genJson.text?.trim() || 'Failed to generate a response'
-    console.log('✅ Final Answer:', answer)
+    console.log('Final answer:', answer)
 
     res.json({ response: answer })
+
   } catch (err) {
-    console.error('\n❌ [Unhandled Error]', err)
-    res.status(500).json({ error: 'Something went wrong' })
+    console.error('Unexpected error occurred:', err)
+    console.error('Stack trace:', err.stack)
+    res.status(500).json({ error: 'Something went wrong', message: err.message })
   }
 }
