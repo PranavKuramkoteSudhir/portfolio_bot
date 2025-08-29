@@ -99,7 +99,7 @@ export default async function handler(req, res) {
     const bestDoc = dbRes?.rows?.[0]
     const bestSimilarity = bestDoc ? Number(bestDoc.similarity) : 0
     const contextContent =
-      bestDoc && bestSimilarity >= 0.1
+      bestDoc && bestSimilarity >= 0.0
         ? bestDoc.content
         : 'No specific context available about this topic.'
 
