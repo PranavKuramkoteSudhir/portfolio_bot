@@ -18,7 +18,7 @@ export default function App() {
       })      
 
       const data = await res.json()
-      setResponse(data.response || 'No response')
+      setResponse(data.response || 'Sorry for the inconvenience, if youre seeing this message it means that the project is no longer being hosted. Please feel free to look at the code at: https://github.com/PranavKuramkoteSudhir/portfolio_bot/')
     } catch (err) {
       console.error(err)
       setResponse('Something went wrong')
